@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Activity, Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Sheet,
   SheetContent,
@@ -37,6 +38,8 @@ const Navbar = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <ThemeToggle />
+            
             <div className="hidden md:flex items-center gap-4">
               <Button variant="outline" asChild>
                 <Link to="/login">Sign In</Link>
