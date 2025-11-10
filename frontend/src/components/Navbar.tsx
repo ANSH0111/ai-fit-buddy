@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Activity } from "lucide-react";
+import { Activity, Menu } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Navbar = () => {
   return (
@@ -32,12 +37,46 @@ const Navbar = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            <Button variant="outline" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
+            <div className="hidden md:flex items-center gap-4">
+              <Button variant="outline" asChild>
+                <Link to="/login">Sign In</Link>
+              </Button>
+              <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </div>
+            
+            <Sheet>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px]">
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Link to="/" className="text-lg font-medium text-foreground hover:text-primary transition-colors px-4 py-2">
+                    Home
+                  </Link>
+                  <Link to="/exercises" className="text-lg font-medium text-foreground hover:text-primary transition-colors px-4 py-2">
+                    Exercises
+                  </Link>
+                  <Link to="/dashboard" className="text-lg font-medium text-foreground hover:text-primary transition-colors px-4 py-2">
+                    Dashboard
+                  </Link>
+                  <Link to="/about" className="text-lg font-medium text-foreground hover:text-primary transition-colors px-4 py-2">
+                    About
+                  </Link>
+                  <div className="flex flex-col gap-2 mt-4 px-4">
+                    <Button variant="outline" asChild className="w-full">
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 w-full" asChild>
+                      <Link to="/signup">Get Started</Link>
+                    </Button>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
