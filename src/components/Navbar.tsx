@@ -32,9 +32,6 @@ const Navbar = () => {
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
-            <Link to="/about" className="text-foreground hover:text-primary transition-colors">
-              About
-            </Link>
           </div>
           
           <div className="flex items-center gap-4">
@@ -74,12 +71,6 @@ const Navbar = () => {
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
                   >
                     Dashboard
-                  </Link>
-                  <Link 
-                    to="/about" 
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
-                  >
-                    About
                   </Link>
                   <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border">
                     <Button variant="outline" asChild>
