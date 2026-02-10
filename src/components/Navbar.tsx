@@ -1,7 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Activity, Menu } from "lucide-react";
+import { Activity, Menu, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -9,6 +11,15 @@ import {
 } from "@/components/ui/sheet";
 
 const Navbar = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out successfully");
+    navigate("/");
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4 py-4">
@@ -38,12 +49,21 @@ const Navbar = () => {
             <ThemeToggle />
             
             <div className="hidden md:flex items-center gap-4">
-              <Button variant="outline" asChild>
-                <Link to="/login">Sign In</Link>
-              </Button>
-              <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
-                <Link to="/signup">Get Started</Link>
-              </Button>
+              {user ? (
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" asChild>
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                  <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
             
             <Sheet>
@@ -73,12 +93,21 @@ const Navbar = () => {
                     Dashboard
                   </Link>
                   <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border">
-                    <Button variant="outline" asChild>
-                      <Link to="/login">Sign In</Link>
-                    </Button>
-                    <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
-                      <Link to="/signup">Get Started</Link>
-                    </Button>
+                    {user ? (
+                      <Button variant="outline" onClick={handleSignOut}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" asChild>
+                          <Link to="/login">Sign In</Link>
+                        </Button>
+                        <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
+                          <Link to="/signup">Get Started</Link>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </nav>
               </SheetContent>
