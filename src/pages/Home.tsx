@@ -4,12 +4,14 @@ import { Activity, MessageSquare, TrendingUp, Video, Zap, Target } from "lucide-
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-fitness.jpg";
 import poseIcon from "@/assets/pose-detection-icon.png";
 import chatbotIcon from "@/assets/chatbot-icon.png";
 import progressIcon from "@/assets/progress-icon.png";
 
 const Home = () => {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -27,9 +29,11 @@ const Home = () => {
                 Real-time posture detection, instant corrections, and personalized guidance. Train smarter, safer, and achieve your fitness goals with AI.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
-                  <Link to="/signup">Start Training Free</Link>
-                </Button>
+                {!user && (
+                  <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90" asChild>
+                    <Link to="/signup">Start Training Free</Link>
+                  </Button>
+                )}
                 <Button size="lg" variant="outline" asChild>
                   <Link to="/demo">Watch Demo</Link>
                 </Button>
@@ -187,9 +191,11 @@ const Home = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Join thousands of users training smarter with AI-powered guidance
           </p>
-          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg px-8" asChild>
-            <Link to="/signup">Get Started Now - It's Free</Link>
-          </Button>
+          {!user && (
+            <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg px-8" asChild>
+              <Link to="/signup">Get Started Now - It's Free</Link>
+            </Button>
+          )}
         </div>
       </section>
 
