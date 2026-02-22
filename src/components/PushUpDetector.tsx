@@ -36,6 +36,7 @@ const PushUpDetector = () => {
 
   const phaseRef = useRef<"up" | "down" | "idle">("idle");
   const repCountRef = useRef(0);
+  const validDownRef = useRef(false); // tracks if the down position met all criteria
 
   // Calculate angle between three points
   const calculateAngle = (
@@ -116,10 +117,6 @@ const PushUpDetector = () => {
   const analyzePushUpForm = (landmarks: any[]): FeedbackItem[] => {
     const fb: FeedbackItem[] = [];
 
-    // Key landmarks: 11=left shoulder, 12=right shoulder, 13=left elbow, 14=right elbow,
-    // 15=left wrist, 16=right wrist, 23=left hip, 24=right hip, 25=left knee, 26=right knee,
-    // 27=left ankle, 28=right ankle
-
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
     const leftElbow = landmarks[13];
@@ -133,60 +130,89 @@ const PushUpDetector = () => {
     const leftAnkle = landmarks[27];
     const rightAnkle = landmarks[28];
 
-    // Calculate elbow angles
+    // 1. Elbow Angle (Body-to-Arm) — angle between torso and upper arm (~30-45° ideal)
+    const leftBodyArmAngle = calculateAngle(leftHip, leftShoulder, leftElbow);
+    const rightBodyArmAngle = calculateAngle(rightHip, rightShoulder, rightElbow);
+    const avgBodyArmAngle = (leftBodyArmAngle + rightBodyArmAngle) / 2;
+
+    // 2. Elbow Flexion — elbow bend angle (~90° at bottom)
     const leftElbowAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
     const rightElbowAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
     const avgElbowAngle = (leftElbowAngle + rightElbowAngle) / 2;
 
-    // Calculate hip angle (body straightness)
-    const leftHipAngle = calculateAngle(leftShoulder, leftHip, leftKnee);
-    const rightHipAngle = calculateAngle(rightShoulder, rightHip, rightKnee);
-    const avgHipAngle = (leftHipAngle + rightHipAngle) / 2;
+    // 3. Torso-to-Floor — body straightness (shoulder-hip-ankle should be ~180°)
+    const leftTorsoAngle = calculateAngle(leftShoulder, leftHip, leftAnkle);
+    const rightTorsoAngle = calculateAngle(rightShoulder, rightHip, rightAnkle);
+    const avgTorsoAngle = (leftTorsoAngle + rightTorsoAngle) / 2;
 
-    // Rep counting logic
-    if (avgElbowAngle < 90 && phaseRef.current !== "down") {
+    // 4. Shoulder/Upper Arm Angle at top — arms should be nearly straight (~160-180°)
+    const armsExtended = avgElbowAngle > 150;
+
+    // 5. Shoulder alignment (proxy for hand angle — shoulders level)
+    const shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
+
+    // --- Condition checks with tolerances ---
+    const isBodyArmGood = avgBodyArmAngle >= 20 && avgBodyArmAngle <= 55; // ~30-45 with tolerance
+    const isElbowFlexGood = avgElbowAngle >= 75 && avgElbowAngle <= 105;  // ~90 with tolerance
+    const isTorsoStraight = avgTorsoAngle >= 155; // close to 180 = straight plank
+    const isShouldersLevel = shoulderDiff <= 0.05;
+
+    // --- Feedback ---
+    if (isBodyArmGood) {
+      fb.push({ type: "good", message: `Body-to-arm angle: ${Math.round(avgBodyArmAngle)}° (ideal 30-45°)` });
+    } else {
+      fb.push({ type: "warning", message: `Body-to-arm angle: ${Math.round(avgBodyArmAngle)}° — keep elbows closer to body (30-45°)` });
+    }
+
+    if (isTorsoStraight) {
+      fb.push({ type: "good", message: "Great plank alignment! Body is straight." });
+    } else {
+      fb.push({ type: "warning", message: `Hips sagging or piked — straighten your body (${Math.round(avgTorsoAngle)}° / 180°)` });
+    }
+
+    if (isShouldersLevel) {
+      fb.push({ type: "good", message: "Shoulders are level and even." });
+    } else {
+      fb.push({ type: "warning", message: "Keep your shoulders level and even." });
+    }
+
+    if (phaseRef.current === "down") {
+      if (isElbowFlexGood) {
+        fb.push({ type: "good", message: `Good depth! Elbow flexion: ${Math.round(avgElbowAngle)}°` });
+      } else if (avgElbowAngle > 105) {
+        fb.push({ type: "warning", message: `Go lower — elbow flexion: ${Math.round(avgElbowAngle)}° (aim for ~90°)` });
+      }
+    }
+
+    // --- Rep counting with all conditions ---
+    // Enter down phase when elbows bend past threshold
+    if (avgElbowAngle < 100 && phaseRef.current !== "down") {
       phaseRef.current = "down";
       setPhase("down");
-    } else if (avgElbowAngle > 150 && phaseRef.current === "down") {
+      // Check if form is good at the bottom
+      validDownRef.current = isBodyArmGood && isElbowFlexGood && isTorsoStraight && isShouldersLevel;
+    }
+
+    // Count rep only when returning to top AND the down position was valid
+    if (avgElbowAngle > 150 && phaseRef.current === "down") {
       phaseRef.current = "up";
       setPhase("up");
-      repCountRef.current += 1;
-      setRepCount(repCountRef.current);
+      if (validDownRef.current && isTorsoStraight && isShouldersLevel) {
+        repCountRef.current += 1;
+        setRepCount(repCountRef.current);
+        fb.push({ type: "good", message: "✓ Perfect rep counted!" });
+      } else {
+        fb.push({ type: "error", message: "Rep not counted — fix your form and try again." });
+      }
+      validDownRef.current = false;
     }
 
-    // Form feedback
-    if (avgHipAngle < 160) {
-      fb.push({
-        type: "warning",
-        message: "Keep your hips up! Your body should form a straight line.",
-      });
-    } else {
-      fb.push({
-        type: "good",
-        message: "Great hip alignment! Body is straight.",
-      });
-    }
-
-    if (avgElbowAngle > 70 && avgElbowAngle < 110 && phaseRef.current === "down") {
-      fb.push({ type: "good", message: "Good depth on the push-up!" });
-    }
-
-    // Check shoulder alignment
-    const shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
-    if (shoulderDiff > 0.05) {
-      fb.push({
-        type: "warning",
-        message: "Keep your shoulders level and even.",
-      });
-    } else {
-      fb.push({ type: "good", message: "Shoulders are well aligned." });
-    }
-
-    // Calculate form score
+    // --- Form score ---
     let score = 100;
-    if (avgHipAngle < 160) score -= 20;
-    if (shoulderDiff > 0.05) score -= 15;
-    if (avgHipAngle < 140) score -= 20;
+    if (!isBodyArmGood) score -= 25;
+    if (!isTorsoStraight) score -= 25;
+    if (!isShouldersLevel) score -= 15;
+    if (avgTorsoAngle < 140) score -= 15;
     setFormScore(Math.max(0, score));
 
     return fb;
@@ -269,6 +295,7 @@ const PushUpDetector = () => {
     setFeedback([]);
     phaseRef.current = "idle";
     setPhase("idle");
+    validDownRef.current = false;
   };
 
   useEffect(() => {
@@ -454,10 +481,11 @@ const PushUpDetector = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Keep your body in a straight line</li>
-                <li>• Lower until elbows reach ~90°</li>
+                <li>• Keep elbows at 30-45° from your body</li>
+                <li>• Lower until elbows reach ~90° flexion</li>
+                <li>• Maintain a straight plank line (shoulder-hip-ankle)</li>
                 <li>• Keep shoulders level and even</li>
-                <li>• Engage your core throughout</li>
+                <li>• Reps only count when all conditions are met</li>
                 <li>• Position camera to see full body</li>
               </ul>
             </CardContent>
