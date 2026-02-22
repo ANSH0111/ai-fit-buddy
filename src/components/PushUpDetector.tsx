@@ -309,14 +309,14 @@ const PushUpDetector = () => {
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
                 <video
                   ref={videoRef}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                   playsInline
                   muted
-                  style={{ display: isActive ? "none" : "none" }}
+                  style={{ display: "none" }}
                 />
                 <canvas
                   ref={canvasRef}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                   style={{ display: isActive ? "block" : "none" }}
                 />
                 {!isActive && (
