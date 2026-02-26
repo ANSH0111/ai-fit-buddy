@@ -36,7 +36,9 @@ const PushUpDetector = () => {
 
   const phaseRef = useRef<"up" | "down" | "idle">("idle");
   const repCountRef = useRef(0);
-  const validDownRef = useRef(false); // tracks if the down position met all criteria
+  const validDownRef = useRef(false);
+  const lastRepTimeRef = useRef(0); // cooldown to prevent double counting
+  const lowestElbowAngleRef = useRef(180); // track deepest point in down phase
 
   // Calculate angle between three points
   const calculateAngle = (
@@ -151,11 +153,11 @@ const PushUpDetector = () => {
     // 5. Shoulder alignment (proxy for hand angle — shoulders level)
     const shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
 
-    // --- Condition checks with tolerances ---
-    const isBodyArmGood = avgBodyArmAngle >= 20 && avgBodyArmAngle <= 55; // ~30-45 with tolerance
-    const isElbowFlexGood = avgElbowAngle >= 75 && avgElbowAngle <= 105;  // ~90 with tolerance
-    const isTorsoStraight = avgTorsoAngle >= 155; // close to 180 = straight plank
-    const isShouldersLevel = shoulderDiff <= 0.05;
+    // --- Beginner-friendly condition checks with wide tolerances ---
+    const isBodyArmGood = avgBodyArmAngle >= 15 && avgBodyArmAngle <= 75;
+    const isElbowFlexGood = avgElbowAngle >= 60 && avgElbowAngle <= 120;
+    const isTorsoStraight = avgTorsoAngle >= 140;
+    const isShouldersLevel = shoulderDiff <= 0.08;
 
     // --- Feedback ---
     if (isBodyArmGood) {
@@ -179,40 +181,55 @@ const PushUpDetector = () => {
     if (phaseRef.current === "down") {
       if (isElbowFlexGood) {
         fb.push({ type: "good", message: `Good depth! Elbow flexion: ${Math.round(avgElbowAngle)}°` });
-      } else if (avgElbowAngle > 105) {
+      } else if (avgElbowAngle > 120) {
         fb.push({ type: "warning", message: `Go lower — elbow flexion: ${Math.round(avgElbowAngle)}° (aim for ~90°)` });
       }
     }
 
-    // --- Rep counting with all conditions ---
+    // --- Rep counting with cooldown to prevent double-counting ---
+    const now = Date.now();
+    const REP_COOLDOWN_MS = 800; // minimum time between reps
+
     // Enter down phase when elbows bend past threshold
-    if (avgElbowAngle < 100 && phaseRef.current !== "down") {
+    if (avgElbowAngle < 110 && phaseRef.current !== "down") {
       phaseRef.current = "down";
       setPhase("down");
-      // Check if form is good at the bottom
-      validDownRef.current = isBodyArmGood && isElbowFlexGood && isTorsoStraight && isShouldersLevel;
+      lowestElbowAngleRef.current = avgElbowAngle;
+      // Mark valid if basic form is okay (beginner-friendly: only need torso straight)
+      validDownRef.current = isTorsoStraight;
     }
 
-    // Count rep only when returning to top AND the down position was valid
-    if (avgElbowAngle > 150 && phaseRef.current === "down") {
+    // Track lowest point during down phase
+    if (phaseRef.current === "down" && avgElbowAngle < lowestElbowAngleRef.current) {
+      lowestElbowAngleRef.current = avgElbowAngle;
+      // Update validity — count if they got low enough
+      if (lowestElbowAngleRef.current <= 120 && isTorsoStraight) {
+        validDownRef.current = true;
+      }
+    }
+
+    // Count rep only when returning to top with cooldown
+    if (avgElbowAngle > 145 && phaseRef.current === "down") {
       phaseRef.current = "up";
       setPhase("up");
-      if (validDownRef.current && isTorsoStraight && isShouldersLevel) {
+      if (validDownRef.current && (now - lastRepTimeRef.current) > REP_COOLDOWN_MS) {
         repCountRef.current += 1;
         setRepCount(repCountRef.current);
-        fb.push({ type: "good", message: "✓ Perfect rep counted!" });
-      } else {
-        fb.push({ type: "error", message: "Rep not counted — fix your form and try again." });
+        lastRepTimeRef.current = now;
+        fb.push({ type: "good", message: "✓ Rep counted!" });
+      } else if (!validDownRef.current) {
+        fb.push({ type: "error", message: "Rep not counted — go lower or straighten your body." });
       }
       validDownRef.current = false;
+      lowestElbowAngleRef.current = 180;
     }
 
-    // --- Form score ---
+    // --- Form score (gentler scoring) ---
     let score = 100;
-    if (!isBodyArmGood) score -= 25;
-    if (!isTorsoStraight) score -= 25;
-    if (!isShouldersLevel) score -= 15;
-    if (avgTorsoAngle < 140) score -= 15;
+    if (!isBodyArmGood) score -= 20;
+    if (!isTorsoStraight) score -= 20;
+    if (!isShouldersLevel) score -= 10;
+    if (avgTorsoAngle < 130) score -= 15;
     setFormScore(Math.max(0, score));
 
     return fb;
@@ -296,6 +313,8 @@ const PushUpDetector = () => {
     phaseRef.current = "idle";
     setPhase("idle");
     validDownRef.current = false;
+    lastRepTimeRef.current = 0;
+    lowestElbowAngleRef.current = 180;
   };
 
   useEffect(() => {
