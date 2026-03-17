@@ -464,7 +464,7 @@ const PushUpDetector = () => {
             <CardHeader>
               <CardTitle>Form Feedback</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="h-48 overflow-y-auto space-y-3">
               {feedback.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Start detection to receive real-time feedback on your push-up form.

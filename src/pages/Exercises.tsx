@@ -75,28 +75,6 @@ const Exercises = () => {
       keypoints: "Spine alignment and shoulder positioning tracked",
       available: false,
     },
-    {
-      id: "burpees",
-      name: "Burpees",
-      category: "Full Body",
-      difficulty: "Hard",
-      duration: "15-20 min",
-      description: "High-intensity full-body exercise for cardiovascular fitness",
-      benefits: ["Cardio", "Full body workout", "Calorie burn"],
-      keypoints: "Multi-phase movement analysis",
-      available: false,
-    },
-    {
-      id: "mountain-climbers",
-      name: "Mountain Climbers",
-      category: "Cardio",
-      difficulty: "Medium",
-      duration: "8-12 min",
-      description: "Dynamic cardio exercise engaging core and legs",
-      benefits: ["Cardio endurance", "Core engagement", "Agility"],
-      keypoints: "Rapid movement tracking with pose estimation",
-      available: false,
-    },
   ];
 
   return (
