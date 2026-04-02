@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import PushUpDetector from "@/components/PushUpDetector";
 import SquatDetector from "@/components/SquatDetector";
+import BicepsCurlDetector from "@/components/BicepsCurlDetector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Exercises = () => {
