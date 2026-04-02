@@ -115,6 +115,10 @@ const Exercises = () => {
             <SquatDetector />
           </TabsContent>
 
+          <TabsContent value="biceps-curls">
+            <BicepsCurlDetector />
+          </TabsContent>
+
           {/* Other exercises - Coming soon */}
           {exercises
             .filter((ex) => !ex.available)
