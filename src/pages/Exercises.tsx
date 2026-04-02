@@ -52,7 +52,7 @@ const Exercises = () => {
       description: "Strengthen legs and glutes while improving overall balance",
       benefits: ["Leg power", "Glute activation", "Joint health"],
       keypoints: "Real-time knee and hip angle analysis",
-      available: false,
+      available: true,
     },
     {
       id: "lunges",
