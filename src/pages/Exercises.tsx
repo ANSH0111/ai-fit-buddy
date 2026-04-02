@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import PushUpDetector from "@/components/PushUpDetector";
 import SquatDetector from "@/components/SquatDetector";
+import BicepsCurlDetector from "@/components/BicepsCurlDetector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Exercises = () => {
@@ -55,15 +56,15 @@ const Exercises = () => {
       available: true,
     },
     {
-      id: "lunges",
-      name: "Lunges",
-      category: "Lower Body",
-      difficulty: "Medium",
-      duration: "12-15 min",
-      description: "Enhance leg strength and improve balance with controlled movements",
-      benefits: ["Single-leg strength", "Balance", "Flexibility"],
-      keypoints: "Advanced posture correction for alignment",
-      available: false,
+      id: "biceps-curls",
+      name: "Biceps Curls",
+      category: "Upper Body",
+      difficulty: "Easy",
+      duration: "8-12 min",
+      description: "Build bicep strength with real-time elbow tracking and body sway detection",
+      benefits: ["Bicep strength", "Arm definition", "Grip strength"],
+      keypoints: "Elbow stability and curl range of motion tracked",
+      available: true,
     },
     {
       id: "plank",
@@ -112,6 +113,10 @@ const Exercises = () => {
 
           <TabsContent value="squats">
             <SquatDetector />
+          </TabsContent>
+
+          <TabsContent value="biceps-curls">
+            <BicepsCurlDetector />
           </TabsContent>
 
           {/* Other exercises - Coming soon */}
