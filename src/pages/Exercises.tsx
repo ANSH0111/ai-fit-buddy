@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import PushUpDetector from "@/components/PushUpDetector";
+import SquatDetector from "@/components/SquatDetector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Exercises = () => {
@@ -51,7 +52,7 @@ const Exercises = () => {
       description: "Strengthen legs and glutes while improving overall balance",
       benefits: ["Leg power", "Glute activation", "Joint health"],
       keypoints: "Real-time knee and hip angle analysis",
-      available: false,
+      available: true,
     },
     {
       id: "lunges",
@@ -107,6 +108,10 @@ const Exercises = () => {
           {/* Push-ups - Active with pose detection */}
           <TabsContent value="push-ups">
             <PushUpDetector />
+          </TabsContent>
+
+          <TabsContent value="squats">
+            <SquatDetector />
           </TabsContent>
 
           {/* Other exercises - Coming soon */}
