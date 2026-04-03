@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import PushUpDetector from "@/components/PushUpDetector";
 import SquatDetector from "@/components/SquatDetector";
 import BicepsCurlDetector from "@/components/BicepsCurlDetector";
+import PlankDetector from "@/components/PlankDetector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Exercises = () => {
