@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import PushUpDetector from "@/components/PushUpDetector";
 import SquatDetector from "@/components/SquatDetector";
 import BicepsCurlDetector from "@/components/BicepsCurlDetector";
+import PlankDetector from "@/components/PlankDetector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Exercises = () => {
@@ -75,7 +76,7 @@ const Exercises = () => {
       description: "Core endurance exercise with spinal alignment monitoring",
       benefits: ["Core strength", "Posture", "Stability"],
       keypoints: "Spine alignment and shoulder positioning tracked",
-      available: false,
+      available: true,
     },
   ];
 
@@ -117,6 +118,10 @@ const Exercises = () => {
 
           <TabsContent value="biceps-curls">
             <BicepsCurlDetector />
+          </TabsContent>
+
+          <TabsContent value="plank">
+            <PlankDetector />
           </TabsContent>
 
           {/* Other exercises - Coming soon */}
