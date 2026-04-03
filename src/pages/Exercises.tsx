@@ -76,7 +76,7 @@ const Exercises = () => {
       description: "Core endurance exercise with spinal alignment monitoring",
       benefits: ["Core strength", "Posture", "Stability"],
       keypoints: "Spine alignment and shoulder positioning tracked",
-      available: false,
+      available: true,
     },
   ];
 
