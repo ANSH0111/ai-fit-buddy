@@ -120,6 +120,10 @@ const Exercises = () => {
             <BicepsCurlDetector />
           </TabsContent>
 
+          <TabsContent value="plank">
+            <PlankDetector />
+          </TabsContent>
+
           {/* Other exercises - Coming soon */}
           {exercises
             .filter((ex) => !ex.available)
