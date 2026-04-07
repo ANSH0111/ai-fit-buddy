@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import Workout from "./pages/Workout";
+
 import Exercises from "./pages/Exercises";
 import ChatbotPage from "./pages/ChatbotPage";
 import Login from "./pages/Login";
@@ -30,7 +30,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/workout" element={<ProtectedRoute><Workout /></ProtectedRoute>} />
+              
               <Route path="/exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
               <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
