@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          fitness_goal: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          fitness_goal?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          fitness_goal?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          calories_burned: number | null
+          created_at: string
+          exercise_name: string
+          form_score: number | null
+          hold_time: number | null
+          id: string
+          reps: number | null
+          user_id: string
+        }
+        Insert: {
+          calories_burned?: number | null
+          created_at?: string
+          exercise_name: string
+          form_score?: number | null
+          hold_time?: number | null
+          id?: string
+          reps?: number | null
+          user_id: string
+        }
+        Update: {
+          calories_burned?: number | null
+          created_at?: string
+          exercise_name?: string
+          form_score?: number | null
+          hold_time?: number | null
+          id?: string
+          reps?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
