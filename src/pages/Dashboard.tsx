@@ -38,7 +38,7 @@ const Dashboard = () => {
 
     const fetchData = async () => {
       const [profileRes, sessionsRes] = await Promise.all([
-        supabase.from("profiles").select("display_name, avatar_url, fitness_goal").eq("user_id", user.id).single(),
+        supabase.from("profiles").select("display_name, avatar_url, fitness_goal").eq("user_id", user.id).maybeSingle(),
         supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
 
