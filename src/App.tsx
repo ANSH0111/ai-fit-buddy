@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import Workout from "./pages/Workout";
+
 import Exercises from "./pages/Exercises";
 import ChatbotPage from "./pages/ChatbotPage";
 import Login from "./pages/Login";
