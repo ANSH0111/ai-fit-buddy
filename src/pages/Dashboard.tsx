@@ -162,13 +162,10 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90" size="lg" asChild>
-                <Link to="/workout">
+                <Link to="/exercises">
                   <Activity className="w-5 h-5 mr-2" />
                   Start Workout Session
                 </Link>
-              </Button>
-              <Button variant="outline" className="w-full" size="lg" asChild>
-                <Link to="/exercises">View Exercise Library</Link>
               </Button>
               <Button variant="outline" className="w-full" size="lg" asChild>
                 <Link to="/chatbot">
