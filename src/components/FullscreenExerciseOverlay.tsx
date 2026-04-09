@@ -67,7 +67,7 @@ const FullscreenExerciseOverlay = ({
 
       {/* Ready gate overlay */}
       {!isReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
           <div className="text-center space-y-4 p-8">
             <Shield className="w-16 h-16 mx-auto text-primary animate-pulse" />
             <h2 className="text-2xl font-bold text-white">Get Into Position</h2>
