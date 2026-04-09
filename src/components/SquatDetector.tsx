@@ -234,11 +234,14 @@ const SquatDetector = () => {
   };
 
   const startDetection = async () => {
-    const result = await initPoseLandmarker();
-    if (!result) return;
-
     await startCamera();
     setIsActive(true);
+
+    const result = await initPoseLandmarker();
+    if (!result) {
+      stopCamera();
+      return;
+    }
     setRepCount(0);
     repCountRef.current = 0;
     phaseRef.current = "idle";
