@@ -242,11 +242,15 @@ const PushUpDetector = () => {
   };
 
   const startDetection = async () => {
-    const result = await initPoseLandmarker();
-    if (!result) return;
-
+    // Start camera FIRST to preserve user-gesture context for getUserMedia
     await startCamera();
     setIsActive(true);
+
+    const result = await initPoseLandmarker();
+    if (!result) {
+      stopCamera();
+      return;
+    }
     setRepCount(0);
     repCountRef.current = 0;
     phaseRef.current = "idle";

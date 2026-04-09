@@ -264,11 +264,14 @@ const PlankDetector = () => {
   };
 
   const startDetection = async () => {
-    const result = await initPoseLandmarker();
-    if (!result) return;
-
     await startCamera();
     setIsActive(true);
+
+    const result = await initPoseLandmarker();
+    if (!result) {
+      stopCamera();
+      return;
+    }
     setHoldTime(0);
     holdTimeRef.current = 0;
     holdStartRef.current = null;
