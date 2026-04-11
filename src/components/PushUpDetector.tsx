@@ -367,6 +367,22 @@ const PushUpDetector = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isActive || !videoRef.current || !streamRef.current) return;
+
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+
+    void video.play().catch((error) => {
+      console.error("Failed to attach camera preview:", error);
+      setCameraError("Unable to start camera preview. Please try again.");
+    });
+  }, [isActive]);
+
   if (isActive) {
     return (
       <FullscreenExerciseOverlay
