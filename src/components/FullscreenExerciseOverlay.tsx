@@ -50,19 +50,18 @@ const FullscreenExerciseOverlay = ({
   cameraError,
 }: FullscreenExerciseOverlayProps) => {
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-      {/* Hidden video */}
+    <div className="fixed inset-0 z-50 bg-black">
       <video
         ref={videoRef}
-        className="hidden"
+        className="absolute inset-0 h-full w-full object-contain"
         playsInline
         muted
+        autoPlay
       />
 
-      {/* Canvas fills screen */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full object-contain"
+        className="absolute inset-0 h-full w-full object-contain pointer-events-none"
       />
 
       {/* Ready gate overlay */}
