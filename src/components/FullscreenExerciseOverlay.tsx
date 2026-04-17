@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Square, RotateCcw, CheckCircle2, AlertCircle, Timer, Shield } from "lucide-react";
+import { Square, RotateCcw, CheckCircle2, AlertCircle, Timer, Shield, Volume2, VolumeX } from "lucide-react";
 
 interface FeedbackItem {
   type: "good" | "warning" | "error";
@@ -24,6 +24,9 @@ interface FullscreenExerciseOverlayProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   videoRef: React.RefObject<HTMLVideoElement>;
   cameraError: string | null;
+  voiceEnabled?: boolean;
+  voiceSupported?: boolean;
+  onToggleVoice?: () => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -48,6 +51,9 @@ const FullscreenExerciseOverlay = ({
   canvasRef,
   videoRef,
   cameraError,
+  voiceEnabled,
+  voiceSupported,
+  onToggleVoice,
 }: FullscreenExerciseOverlayProps) => {
   return (
     <div className="fixed inset-0 z-50 bg-black">
@@ -177,6 +183,27 @@ const FullscreenExerciseOverlay = ({
           <RotateCcw className="w-5 h-5 mr-2" />
           Reset
         </Button>
+        {onToggleVoice && voiceSupported && (
+          <Button
+            size="lg"
+            variant="outline"
+            className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 hover:text-white shadow-lg"
+            onClick={onToggleVoice}
+            title={voiceEnabled ? "Mute voice feedback" : "Enable voice feedback"}
+          >
+            {voiceEnabled ? (
+              <>
+                <Volume2 className="w-5 h-5 mr-2" />
+                Voice On
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-5 h-5 mr-2" />
+                Voice Off
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Camera error */}
