@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Play } from "lucide-react";
 import FullscreenExerciseOverlay from "@/components/FullscreenExerciseOverlay";
+import { useVoiceFeedback } from "@/hooks/useVoiceFeedback";
 
 interface FeedbackItem {
   type: "good" | "warning" | "error";
@@ -27,6 +28,9 @@ const PushUpDetector = () => {
   const [isReady, setIsReady] = useState(false);
   const [readyProgress, setReadyProgress] = useState(0);
   const [latestFeedback, setLatestFeedback] = useState<FeedbackItem | null>(null);
+  const voice = useVoiceFeedback();
+  const lastRepAnnouncedRef = useRef(0);
+  const wasReadyRef = useRef(false);
 
   const phaseRef = useRef<"up" | "down" | "idle">("idle");
   const repCountRef = useRef(0);
@@ -315,6 +319,18 @@ const PushUpDetector = () => {
           // Pick the most important feedback for the overlay
           const important = fb.find(f => f.type === "error") || fb.find(f => f.type === "warning") || fb.find(f => f.message.includes("Rep counted")) || fb[0] || null;
           setLatestFeedback(important);
+
+          // Voice feedback
+          if (isReadyRef.current && !wasReadyRef.current) {
+            wasReadyRef.current = true;
+            voice.speak("Ready. Begin push-ups.", { priority: true });
+          }
+          if (isReadyRef.current && repCountRef.current > lastRepAnnouncedRef.current) {
+            lastRepAnnouncedRef.current = repCountRef.current;
+            voice.speak(String(repCountRef.current), { priority: true, cooldownMs: 500 });
+          } else if (isReadyRef.current && important && (important.type === "warning" || important.type === "error")) {
+            voice.speak(important.message.replace(/[°✓]/g, "").replace(/\d+/g, ""), { cooldownMs: 4000 });
+          }
         }
       }
 
@@ -335,6 +351,9 @@ const PushUpDetector = () => {
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
+    voice.cancel();
+    wasReadyRef.current = false;
+    lastRepAnnouncedRef.current = 0;
   };
 
   const resetSession = () => {
@@ -352,6 +371,9 @@ const PushUpDetector = () => {
     readyStartRef.current = null;
     setReadyProgress(0);
     setLatestFeedback(null);
+    wasReadyRef.current = false;
+    lastRepAnnouncedRef.current = 0;
+    voice.cancel();
   };
 
   useEffect(() => {
@@ -398,6 +420,9 @@ const PushUpDetector = () => {
         canvasRef={canvasRef}
         videoRef={videoRef}
         cameraError={cameraError}
+        voiceEnabled={voice.enabled}
+        voiceSupported={voice.supported}
+        onToggleVoice={voice.toggle}
       />
     );
   }
