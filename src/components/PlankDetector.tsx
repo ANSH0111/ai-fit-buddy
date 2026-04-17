@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Play } from "lucide-react";
 import FullscreenExerciseOverlay from "@/components/FullscreenExerciseOverlay";
+import { useVoiceFeedback } from "@/hooks/useVoiceFeedback";
 
 interface FeedbackItem {
   type: "good" | "warning" | "error";
@@ -28,6 +29,10 @@ const PlankDetector = () => {
   const [isReady, setIsReady] = useState(false);
   const [readyProgress, setReadyProgress] = useState(0);
   const [latestFeedback, setLatestFeedback] = useState<FeedbackItem | null>(null);
+  const voice = useVoiceFeedback();
+  const wasReadyRef = useRef(false);
+  const wasHoldingRef = useRef(false);
+  const lastMilestoneRef = useRef(0);
 
   const holdStartRef = useRef<number | null>(null);
   const holdTimeRef = useRef(0);
@@ -333,6 +338,29 @@ const PlankDetector = () => {
           setFeedback(fb);
           const important = fb.find(f => f.type === "error") || fb.find(f => f.type === "warning") || fb.find(f => f.message.includes("Holding")) || fb[0] || null;
           setLatestFeedback(important);
+
+          if (isReadyRef.current && !wasReadyRef.current) {
+            wasReadyRef.current = true;
+            voice.speak("Ready. Hold the plank.", { priority: true });
+          }
+          if (isReadyRef.current) {
+            if (isHoldingRef.current && !wasHoldingRef.current) {
+              wasHoldingRef.current = true;
+              voice.speak("Good. Hold steady.", { priority: true });
+            } else if (!isHoldingRef.current && wasHoldingRef.current) {
+              wasHoldingRef.current = false;
+            }
+            // Announce milestones every 15 seconds
+            const currentSeconds = Math.floor((Date.now() - (holdStartRef.current ?? Date.now())) / 1000) + holdTimeRef.current;
+            const milestone = Math.floor(currentSeconds / 15);
+            if (isHoldingRef.current && milestone > lastMilestoneRef.current && currentSeconds > 0) {
+              lastMilestoneRef.current = milestone;
+              voice.speak(`${currentSeconds} seconds`, { priority: true, cooldownMs: 1000 });
+            }
+            if (important && (important.type === "warning" || important.type === "error")) {
+              voice.speak(important.message.replace(/[°✓]/g, "").replace(/\d+/g, ""), { cooldownMs: 5000 });
+            }
+          }
         }
       }
 
@@ -353,6 +381,10 @@ const PlankDetector = () => {
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
+    voice.cancel();
+    wasReadyRef.current = false;
+    wasHoldingRef.current = false;
+    lastMilestoneRef.current = 0;
   };
 
   const resetSession = () => {
@@ -374,6 +406,10 @@ const PlankDetector = () => {
     readyStartRef.current = null;
     setReadyProgress(0);
     setLatestFeedback(null);
+    wasReadyRef.current = false;
+    wasHoldingRef.current = false;
+    lastMilestoneRef.current = 0;
+    voice.cancel();
   };
 
   useEffect(() => {
@@ -422,6 +458,9 @@ const PlankDetector = () => {
         canvasRef={canvasRef}
         videoRef={videoRef}
         cameraError={cameraError}
+        voiceEnabled={voice.enabled}
+        voiceSupported={voice.supported}
+        onToggleVoice={voice.toggle}
       />
     );
   }
