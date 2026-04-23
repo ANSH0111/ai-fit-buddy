@@ -210,6 +210,29 @@ const Home = () => {
       </section>
 
       <Footer />
+
+      {/* Demo Video Modal */}
+      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>AI Fitness Trainer Demo</DialogTitle>
+            <DialogDescription>
+              Watch a demo of the AI Fitness Trainer in action.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-black">
+            <video
+              src="/demo.mp4"
+              controls
+              autoPlay
+              className="w-full h-full"
+              poster="/placeholder.svg"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
