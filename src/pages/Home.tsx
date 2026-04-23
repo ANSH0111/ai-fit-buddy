@@ -43,8 +43,9 @@ const Home = () => {
                     <Link to="/signup">Start Training Free</Link>
                   </Button>
                 )}
-                <Button size="lg" variant="outline" asChild>
-                  <Link to="/demo">Watch Demo</Link>
+                <Button size="lg" variant="outline" onClick={() => setDemoOpen(true)}>
+                  <Play className="w-4 h-4 mr-2" />
+                  Watch Demo
                 </Button>
               </div>
               <div className="flex items-center gap-8 pt-4">
