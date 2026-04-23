@@ -1,6 +1,14 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, MessageSquare, TrendingUp, Video, Zap, Target } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Activity, MessageSquare, TrendingUp, Video, Zap, Target, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -12,6 +20,7 @@ import progressIcon from "@/assets/progress-icon.png";
 
 const Home = () => {
   const { user } = useAuth();
+  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -34,8 +43,9 @@ const Home = () => {
                     <Link to="/signup">Start Training Free</Link>
                   </Button>
                 )}
-                <Button size="lg" variant="outline" asChild>
-                  <Link to="/demo">Watch Demo</Link>
+                <Button size="lg" variant="outline" onClick={() => setDemoOpen(true)}>
+                  <Play className="w-4 h-4 mr-2" />
+                  Watch Demo
                 </Button>
               </div>
               <div className="flex items-center gap-8 pt-4">
@@ -200,6 +210,29 @@ const Home = () => {
       </section>
 
       <Footer />
+
+      {/* Demo Video Modal */}
+      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>AI Fitness Trainer Demo</DialogTitle>
+            <DialogDescription>
+              Watch a demo of the AI Fitness Trainer in action.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-black">
+            <video
+              src="/demo.mp4"
+              controls
+              autoPlay
+              className="w-full h-full"
+              poster="/placeholder.svg"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
