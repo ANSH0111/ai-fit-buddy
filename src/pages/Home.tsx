@@ -20,6 +20,7 @@ import progressIcon from "@/assets/progress-icon.png";
 
 const Home = () => {
   const { user } = useAuth();
+  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <div className="min-h-screen">
       <Navbar />
