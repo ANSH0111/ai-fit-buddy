@@ -86,24 +86,8 @@ export function getRuleBasedResponse(message: string): string | null {
   return null;
 }
 
-// ─── GROQ API CALL ────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are an expert AI fitness coach integrated into a workout app that uses real-time posture detection via MediaPipe. 
-
-Your personality: energetic, supportive, concise, and knowledgeable.
-
-You specialize in:
-- Exercise form correction (squats, push-ups, planks, bicep curls, lunges)
-- Workout programming for beginners to intermediate
-- Nutrition basics (protein, hydration, meal timing)
-- Recovery and injury prevention
-- Motivation and habit building
-
-Rules:
-- Keep responses under 120 words
-- Use 1-2 relevant emojis max
-- Be specific and actionable, not vague
-- If asked about medical conditions, recommend seeing a doctor
-- Never recommend dangerous exercises or extreme diets`;
+// ─── GROQ API CALL (via secure edge function) ────────────────────────────────
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GroqMessage {
   role: "user" | "assistant";
@@ -114,39 +98,18 @@ export async function getGroqResponse(
   history: GroqMessage[],
   currentExercise?: string
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-
-  if (!apiKey) {
-    return "⚠️ No API key found. Please add VITE_GROQ_API_KEY to your .env file. Get a free key at console.groq.com";
-  }
-
-  const systemWithContext = currentExercise
-    ? `${SYSTEM_PROMPT}\n\nThe user is currently doing: ${currentExercise}. Reference this exercise when relevant.`
-    : SYSTEM_PROMPT;
-
-  const response = await fetch(GROQ_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "llama3-8b-8192",
-      messages: [
-        { role: "system", content: systemWithContext },
-        ...history.slice(-10), // last 10 messages for context
-      ],
-      temperature: 0.7,
-      max_tokens: 200,
-    }),
+  const { data, error } = await supabase.functions.invoke("groq-chat", {
+    body: { history: history.slice(-10), currentExercise },
   });
 
-  if (!response.ok) {
-  const err = await response.text();
-  console.error("FULL GROQ ERROR:", err);
-  throw new Error(err);
-}
+  if (error) {
+    console.error("groq-chat invoke error:", error);
+    throw new Error(error.message ?? "Failed to reach AI coach");
+  }
 
-  const data = await response.json();
-  return data.choices[0]?.message?.content ?? "I couldn't get a response. Please try again.";
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data?.reply ?? "I couldn't get a response. Please try again.";
 }
