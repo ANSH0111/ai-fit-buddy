@@ -42,11 +42,15 @@ const ChatbotPage = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { enabled, supported, speak, toggle } = useVoiceFeedback();
 
-  // Auto-scroll to latest message
+  // Auto-scroll only the messages container, not the whole page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   // Speak bot messages when they arrive
