@@ -184,7 +184,7 @@ const ChatbotPage = () => {
               </CardHeader>
 
               {/* Messages */}
-              <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+              <CardContent ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.map((message, i) => (
                   <div
                     key={i}
