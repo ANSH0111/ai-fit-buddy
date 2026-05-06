@@ -379,6 +379,16 @@ const PlankDetector = () => {
   };
 
   const stopDetection = () => {
+    const activeSeconds = holdStartRef.current
+      ? Math.floor((Date.now() - holdStartRef.current) / 1000)
+      : 0;
+    const totalHold = holdTimeRef.current + activeSeconds;
+    const finalBest = Math.max(bestTimeRef.current, totalHold);
+    void saveWorkoutSession({
+      exercise_name: "Plank",
+      hold_time: finalBest,
+      form_score: formScore,
+    });
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
