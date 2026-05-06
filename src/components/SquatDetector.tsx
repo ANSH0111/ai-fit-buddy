@@ -335,6 +335,11 @@ const SquatDetector = () => {
   };
 
   const stopDetection = () => {
+    void saveWorkoutSession({
+      exercise_name: "Squats",
+      reps: repCountRef.current,
+      form_score: formScore,
+    });
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
