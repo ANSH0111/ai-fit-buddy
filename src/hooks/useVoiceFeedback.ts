@@ -72,8 +72,32 @@ export const useVoiceFeedback = () => {
   }, [supported]);
 
   const toggle = useCallback(() => {
-    setEnabled((prev) => !prev);
-  }, []);
+    setEnabled((prev) => {
+      const next = !prev;
+      if (supported) {
+        // Always cancel any queued/ongoing speech first
+        window.speechSynthesis.cancel();
+        // Reset cooldown tracking so the next message isn't suppressed
+        lastSpokenRef.current = "";
+        lastSpokenAtRef.current = 0;
+        if (next) {
+          // Prime speechSynthesis within the user gesture so subsequent
+          // speak() calls from the detection loop are not blocked by
+          // browser autoplay/gesture policies.
+          try {
+            const primer = new SpeechSynthesisUtterance(" ");
+            primer.volume = 0;
+            primer.rate = 1;
+            primer.lang = "en-US";
+            window.speechSynthesis.speak(primer);
+          } catch {
+            // ignore
+          }
+        }
+      }
+      return next;
+    });
+  }, [supported]);
 
   return { enabled, supported, speak, cancel, toggle };
 };
