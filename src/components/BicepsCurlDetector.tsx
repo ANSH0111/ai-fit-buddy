@@ -342,6 +342,11 @@ const BicepsCurlDetector = () => {
   };
 
   const stopDetection = () => {
+    void saveWorkoutSession({
+      exercise_name: "Biceps Curls",
+      reps: repCountRef.current,
+      form_score: formScore,
+    });
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
