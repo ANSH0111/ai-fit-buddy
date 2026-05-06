@@ -349,6 +349,11 @@ const PushUpDetector = () => {
   };
 
   const stopDetection = () => {
+    void saveWorkoutSession({
+      exercise_name: "Push-ups",
+      reps: repCountRef.current,
+      form_score: formScore,
+    });
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
