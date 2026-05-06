@@ -1,387 +1,239 @@
-# AI Fitness Trainer - Project Implementation Guide
+# AI Fitness Trainer — Project Implementation Guide
+
+A complete, working AI-Based Virtual Fitness Coach using **Real-Time Posture Detection** (MediaPipe) and an **Interactive AI Chatbot** (Groq LLM via Supabase Edge Function), built with React + TypeScript + Lovable Cloud (Supabase).
+
+---
 
 ## 🎯 Project Overview
 
-This is your **AI-Based Virtual Fitness Coach** using Real-Time Posture Detection and Interactive Chatbot - a complete full-stack application combining:
-- **Computer Vision** (MediaPipe Pose Estimation)
-- **Machine Learning** (Posture Classification & Rep Counting)
-- **Natural Language Processing** (AI Chatbot)
-- **Full-stack Web Development** (React + Backend)
+This project combines:
+- **Computer Vision** — MediaPipe Pose for real-time 33-landmark detection in the browser
+- **Rule-based ML** — Joint-angle thresholds + state machines for form scoring and rep counting
+- **Conversational AI** — Groq `llama-3.1-8b-instant` chatbot with rule-based fallback
+- **Full-stack Web App** — React 18 + Vite + Tailwind + shadcn/ui frontend, Supabase (auth + Postgres + edge functions) backend
+
+The final app implements **4 exercises**: Push-ups, Squats, Biceps Curls, and Plank — with live skeleton overlay, voice feedback, rep counting, form scoring, calorie estimation, and a personal analytics dashboard.
 
 ---
 
-## 📚 What You Need to Learn for Your Project Defense
+## 🧱 Final Tech Stack
 
-### 1. **Computer Vision & Pose Estimation** ⭐⭐⭐ (CRITICAL)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, TypeScript, Vite 5, React Router |
+| Styling | Tailwind CSS v3, shadcn/ui, semantic HSL design tokens |
+| Pose Detection | MediaPipe Pose (browser, ~30 FPS) |
+| Voice | Web Speech API (`SpeechSynthesis`) |
+| Auth & DB | Supabase (via Lovable Cloud) — email/password auth, Postgres with RLS |
+| AI Chatbot | Groq API (`llama-3.1-8b-instant`) proxied via Supabase Edge Function |
+| Theming | next-themes (light/dark mode) |
 
-#### MediaPipe Pose
-- **What it is**: Google's ML solution for real-time human pose detection
-- **How it works**: 
-  - Detects 33 body landmarks (keypoints) including shoulders, elbows, hips, knees, ankles
-  - Works via webcam in the browser using TensorFlow.js
-  - Returns x, y, z coordinates + visibility score for each landmark
+---
 
-#### Key Concepts to Explain:
-```javascript
-// Example of pose landmarks structure
-{
-  landmarks: [
-    { x: 0.5, y: 0.3, z: -0.1, visibility: 0.99 }, // Nose (0)
-    { x: 0.52, y: 0.28, z: -0.09, visibility: 0.98 }, // Left Eye (1)
-    // ... 33 total landmarks
-  ]
+## 📂 Project Structure
+
+```
+src/
+├── pages/
+│   ├── Home.tsx              # Public landing page
+│   ├── Login.tsx / Signup.tsx
+│   ├── Exercises.tsx         # Exercise picker (4 exercises)
+│   ├── Workout.tsx           # Active workout with detector
+│   ├── Dashboard.tsx         # Personal analytics & history
+│   └── ChatbotPage.tsx       # AI fitness coach chat
+├── components/
+│   ├── PushUpDetector.tsx    # Per-exercise MediaPipe detectors
+│   ├── SquatDetector.tsx
+│   ├── BicepsCurlDetector.tsx
+│   ├── PlankDetector.tsx
+│   ├── FullscreenExerciseOverlay.tsx
+│   ├── Navbar.tsx / Footer.tsx / NavLink.tsx
+│   ├── ProtectedRoute.tsx    # Auth guard
+│   ├── ScrollToTop.tsx       # Auto-scroll on route change
+│   └── ThemeProvider.tsx / ThemeToggle.tsx
+├── contexts/
+│   └── AuthContext.tsx       # Supabase session w/ self-healing
+├── hooks/
+│   └── useVoiceFeedback.ts   # Web Speech API wrapper
+├── lib/
+│   ├── chatbot.ts            # Rule-based responses + Groq invoker
+│   └── saveWorkoutSession.ts # Persists session to Supabase
+└── integrations/supabase/    # Auto-generated client + types
+
+supabase/functions/groq-chat/  # Edge function proxying Groq API
+```
+
+---
+
+## 🧠 Core Concepts
+
+### 1. MediaPipe Pose Estimation
+- Detects **33 body landmarks** per frame (`x`, `y`, `z`, `visibility`)
+- Runs entirely client-side in the browser via WebAssembly
+- Pipeline: `Webcam → MediaPipe → 33 Landmarks → Angle Calc → Form Check → Rep Count → Voice + UI Feedback`
+
+### 2. Joint Angle Calculation
+Used in every detector to evaluate form. Given three points A–B–C, the angle at B is:
+
+```ts
+function angle(a, b, c) {
+  const ab = { x: a.x - b.x, y: a.y - b.y };
+  const cb = { x: c.x - b.x, y: c.y - b.y };
+  const dot = ab.x * cb.x + ab.y * cb.y;
+  const mag = Math.hypot(ab.x, ab.y) * Math.hypot(cb.x, cb.y);
+  return Math.acos(dot / mag) * (180 / Math.PI);
 }
 ```
 
-**What to study:**
-- How MediaPipe detects keypoints using neural networks
-- The 33 landmark positions (memorize key ones: shoulders, elbows, hips, knees)
-- Difference between 2D and 3D pose estimation
-- Real-time processing pipeline
+| Exercise | Key Angle | Down Threshold | Up Threshold |
+|----------|-----------|----------------|--------------|
+| Push-up | Shoulder–Elbow–Wrist | < 90° | > 160° |
+| Squat | Hip–Knee–Ankle | < 100° | > 160° |
+| Biceps Curl | Shoulder–Elbow–Wrist | < 50° | > 150° |
+| Plank | Shoulder–Hip–Ankle | n/a (must stay 160°–185°) | n/a |
 
-**Resources:**
-- MediaPipe Pose documentation
-- Paper: "BlazePose: On-device Real-time Body Pose tracking"
+### 3. Rep Counting — State Machine
+Each detector tracks an `up`/`down` state and increments the counter on each full transition.
 
----
+### 4. Form Scoring
+A running 0–100 score is updated each frame based on how close the active joint angle is to the ideal range. Out-of-range frames lower the score; clean reps raise it.
 
-### 2. **Joint Angle Calculation** ⭐⭐⭐ (CRITICAL)
+### 5. Voice Feedback (`useVoiceFeedback`)
+- Uses the browser `SpeechSynthesis` API
+- Toggle button cancels in-flight speech and plays a silent primer to satisfy autoplay policy
+- Cooldown prevents repeating the same cue too often
 
-#### Mathematics Behind Form Analysis
-
-**Vector Calculation:**
-```python
-def calculate_angle(point1, point2, point3):
-    # Create vectors
-    vector1 = [point1.x - point2.x, point1.y - point2.y]
-    vector2 = [point3.x - point2.x, point3.y - point2.y]
-    
-    # Calculate angle using dot product and cosine
-    dot_product = vector1[0]*vector2[0] + vector1[1]*vector2[1]
-    magnitude1 = sqrt(vector1[0]**2 + vector1[1]**2)
-    magnitude2 = sqrt(vector2[0]**2 + vector2[1]**2)
-    
-    angle = acos(dot_product / (magnitude1 * magnitude2))
-    return degrees(angle)
-```
-
-**Example for Push-up:**
-- Elbow angle: shoulder → elbow → wrist
-- Correct form: 90° at bottom, 160-180° at top
-- Spine alignment: hip → shoulder → ear (should be straight)
-
-**What to study:**
-- Vector mathematics and dot product
-- Cosine similarity for comparing poses
-- Euclidean distance for landmark proximity
-- Angle thresholds for different exercises
+### 6. AI Chatbot (Hybrid)
+- **Rule-based first** (`src/lib/chatbot.ts`) — instant, no API call, covers common fitness questions
+- **Groq fallback** — calls the `groq-chat` Supabase edge function with the last 10 messages and current exercise context
+- Edge function injects a system prompt and forwards to `llama-3.1-8b-instant`
+- The Groq API key is stored as a Supabase secret (`GROQ_API_KEY`) — never exposed to the browser
 
 ---
 
-### 3. **Machine Learning for Posture Classification** ⭐⭐
+## 🗄️ Database Schema (Supabase)
 
-#### Supervised Learning Approach
+### `profiles`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK, FK → auth.users) | |
+| full_name | text | |
+| created_at | timestamptz | |
 
-**Training Data Structure:**
+### `workout_sessions`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | |
+| user_id | uuid (FK → auth.users) | RLS: user can only see their own |
+| exercise_name | text | "Push-ups" / "Squats" / "Biceps Curls" / "Plank" |
+| reps | int | |
+| hold_time | int | seconds (Plank only) |
+| form_score | int | 0–100 |
+| calories_burned | numeric | estimated |
+| created_at | timestamptz | |
+
+**RLS**: Users can only `SELECT`/`INSERT` their own rows. Roles (if introduced) live in a separate `user_roles` table with a `has_role()` SECURITY DEFINER function.
+
+### Calorie Estimation (`src/lib/saveWorkoutSession.ts`)
 ```
-Input: [angle1, angle2, angle3, ..., distance1, distance2, ...]
-Label: "correct" or "incorrect"
-```
-
-**Models you can use:**
-1. **Rule-Based (Simpler to explain):**
-   ```python
-   if 80 <= elbow_angle <= 100 and spine_straight:
-       return "Correct Push-up"
-   else:
-       return "Incorrect - Adjust elbow angle"
-   ```
-
-2. **ML Models:**
-   - Support Vector Machine (SVM)
-   - Random Forest Classifier
-   - Neural Networks (CNN/LSTM for sequences)
-
-**What to study:**
-- Supervised learning basics
-- Feature extraction from pose landmarks
-- Training/testing split and evaluation metrics
-- Precision, Recall, F1-score
-
----
-
-### 4. **Repetition Counting Algorithm** ⭐⭐
-
-#### State Machine Approach
-
-```python
-class RepCounter:
-    def __init__(self):
-        self.state = "up"
-        self.count = 0
-    
-    def update(self, key_angle):
-        if self.state == "up" and key_angle < 100:
-            self.state = "down"
-        elif self.state == "down" and key_angle > 160:
-            self.state = "up"
-            self.count += 1
-        return self.count
-```
-
-**What to study:**
-- State machines and finite automata
-- Peak detection algorithms
-- Smoothing techniques (moving average)
-- Threshold tuning for different exercises
-
----
-
-### 5. **Natural Language Processing & Chatbot** ⭐⭐
-
-#### AI Chatbot Integration
-
-For your project, we'll use **Lovable AI** (Google Gemini/OpenAI GPT):
-
-```javascript
-// Example API call
-const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    model: 'google/gemini-2.5-flash',
-    messages: [
-      { role: 'system', content: 'You are a fitness coach assistant' },
-      { role: 'user', content: userMessage }
-    ]
-  })
-});
-```
-
-**What to study:**
-- NLP basics and tokenization
-- Intent recognition
-- Entity extraction
-- Transformer models (BERT/GPT architecture basics)
-- Conversational AI design patterns
-
----
-
-### 6. **Full-Stack Architecture** ⭐⭐⭐ (CRITICAL)
-
-#### Frontend (React + TypeScript)
-- **React**: Component-based UI library
-- **TypeScript**: Type-safe JavaScript
-- **TailwindCSS**: Utility-first styling
-- **React Router**: Navigation
-- **Shadcn UI**: Component library
-
-#### Backend (Lovable Cloud/Supabase)
-- **PostgreSQL**: Database for user data, workout history
-- **Edge Functions**: Serverless API endpoints
-- **Authentication**: User login/signup
-- **Storage**: Media files, user profiles
-
-#### System Architecture Diagram:
-```
-┌─────────────┐
-│   Browser   │
-│   (React)   │
-└──────┬──────┘
-       │
-       ↓ (REST API)
-┌─────────────────┐
-│  Edge Functions │
-│   (Backend)     │
-└──────┬──────────┘
-       │
-       ↓
-┌──────────────────┐
-│  Lovable AI API  │ (Chatbot)
-└──────────────────┘
-       
-┌──────────────────┐
-│   PostgreSQL DB  │ (User data)
-└──────────────────┘
+Push-ups       0.50 kcal/rep
+Squats         0.32 kcal/rep
+Biceps Curls   0.15 kcal/rep
+Plank          0.07 kcal/second
 ```
 
 ---
 
-## 🚀 Implementation Roadmap (What's Next)
+## 🔐 Auth Flow
 
-### Phase 1: Foundation (DONE ✅)
-- [x] Project setup with React + TypeScript
-- [x] Beautiful UI/UX design
-- [x] Navigation and routing
-- [x] Landing page with features
-- [x] Dashboard mockup
-- [x] Exercise library
-- [x] Workout session interface
-- [x] Chatbot interface
-
-### Phase 2: Backend Integration (TODO)
-- [ ] Enable Lovable Cloud
-- [ ] Set up database tables (users, workouts, exercises)
-- [ ] Implement authentication (signup/login)
-- [ ] Create API endpoints for workout tracking
-- [ ] Integrate AI chatbot with Lovable AI
-
-### Phase 3: Computer Vision (TODO)
-- [ ] Install MediaPipe dependencies
-- [ ] Implement webcam access
-- [ ] Real-time pose landmark detection
-- [ ] Joint angle calculations
-- [ ] Visual skeleton overlay
-
-### Phase 4: AI Features (TODO)
-- [ ] Posture classification logic
-- [ ] Real-time feedback system
-- [ ] Repetition counting algorithm
-- [ ] Exercise recognition
-- [ ] Voice feedback (optional)
-
-### Phase 5: Advanced Features (TODO)
-- [ ] Progress tracking with charts
-- [ ] Workout history visualization
-- [ ] Goal setting and achievements
-- [ ] Social features (optional)
+- Email + password sign-up/sign-in via Supabase
+- `AuthContext` subscribes to `onAuthStateChange` and self-heals invalid sessions by signing out on `getSession` errors
+- `ProtectedRoute` wraps Dashboard, Exercises, Workout, and Chatbot pages
+- Home is publicly accessible
 
 ---
 
-## 📖 Key Technologies to Study
+## 📊 Dashboard
 
-### Must Know (Defense Essential):
-1. **MediaPipe Pose Estimation** - How it detects body landmarks
-2. **Joint Angle Calculation** - Vector math and trigonometry
-3. **React & TypeScript** - Frontend development
-4. **REST APIs** - Client-server communication
-5. **Database Design** - PostgreSQL basics
+Pulls the authenticated user's `workout_sessions` and computes:
+- **Total Workouts** — row count
+- **Average Form Score** — mean of `form_score`
+- **Total Calories Burned** — sum of `calories_burned`
+- **Total Reps** — sum of `reps`
+- **Per-exercise breakdown** + recent session list
 
-### Good to Know:
-1. **Machine Learning** - Classification algorithms
-2. **State Management** - React hooks, context
-3. **Real-time Processing** - WebRTC, video streams
-4. **NLP Basics** - Chatbot architecture
-
-### Nice to Have:
-1. **TensorFlow.js** - Browser-based ML
-2. **Computer Vision Theory** - Image processing
-3. **Cloud Deployment** - Hosting and scaling
+Stats populate after the user clicks **Stop** during a workout, which triggers `saveWorkoutSession()`.
 
 ---
 
-## 💡 Key Points for Your Defense
+## 🤖 Edge Function — `groq-chat`
 
-### Technical Highlights:
-1. **Real-time Processing**: Explain how MediaPipe processes 30+ FPS
-2. **Accuracy**: 98% pose detection accuracy with 33 keypoints
-3. **Scalability**: Cloud-based architecture supports multiple users
-4. **AI Integration**: Advanced NLP for conversational guidance
-5. **Security**: Authentication and data encryption
+Located at `supabase/functions/groq-chat/index.ts`. Responsibilities:
+1. Validates incoming `{ history, currentExercise }` payload
+2. Reads `GROQ_API_KEY` from Supabase secrets
+3. Posts to `https://api.groq.com/openai/v1/chat/completions` with model `llama-3.1-8b-instant`
+4. Returns `{ reply }` or `{ error }` with proper CORS headers
 
-### Project Novelty:
-- Combines pose estimation + ML classification + chatbot
-- Real-time feedback vs passive video tutorials
-- Accessible home fitness solution
-- Reduces injury risk through form correction
-
-### Potential Applications:
-- Personal fitness training
-- Physical therapy and rehabilitation
-- Sports coaching and analysis
-- Elderly care and fall prevention
-- School/gym fitness programs
+> **Why an edge function?** Keeps the API key server-side and avoids CORS/secret-leak issues. The same pattern is used (per project memory) to proxy any external service.
 
 ---
 
-## 📝 Important Algorithms to Explain
+## 🎨 Design System
 
-### 1. Pose Estimation Pipeline
-```
-Video Frame → MediaPipe Model → 33 Landmarks → Angle Calculation → Classification → Feedback
-```
+- HSL semantic tokens defined in `src/index.css` and `tailwind.config.ts`
+- Energetic blue/teal gradients with coral accents
+- Light + dark mode via `ThemeProvider`
+- Fixed-height workout feedback panels to prevent layout shift
+- Auto-scroll to top on route change (`ScrollToTop`)
 
-### 2. Posture Correction Logic
-```python
-if elbow_angle < 80:
-    feedback = "Bend elbows more"
-elif elbow_angle > 100:
-    feedback = "Straighten arms"
-else:
-    feedback = "Perfect form!"
-```
-
-### 3. Rep Counting State Machine
-```
-UP state (extended) → DOWN state (contracted) → UP state = 1 rep
-```
+Never use raw color classes (`bg-white`, `text-black`) — always semantic tokens (`bg-background`, `text-primary`, etc.).
 
 ---
 
-## 🎓 Study Materials
+## 🚦 Allowed Scope (per project memory)
 
-### Papers to Read:
-1. "BlazePose: On-device Real-time Body Pose tracking" (Google)
-2. "OpenPose: Realtime Multi-Person 2D Pose Estimation"
-3. "Attention Is All You Need" (Transformers - for NLP basics)
-
-### Online Resources:
-- MediaPipe Documentation
-- TensorFlow.js Pose Detection tutorial
-- React + TypeScript handbook
-- Supabase tutorials
+**Exercises (4 only):** Push-ups, Squats, Biceps Curls, Plank
+**Pages (3 only):** Home (public), Exercises, Dashboard (+ auth + workout + chatbot)
+**Excluded:** About, Contact, Burpees, Lunges, standalone Workout page in nav
 
 ---
 
-## 🎯 Defense Questions You Might Face
+## ✅ Implementation Status
 
-### Technical Questions:
-1. **How does MediaPipe detect body landmarks?**
-   - Answer: Uses a 2-stage neural network: detector + tracker
-
-2. **How do you calculate joint angles?**
-   - Answer: Vector math using dot product and cosine similarity
-
-3. **How does the chatbot understand user queries?**
-   - Answer: NLP models process text and extract intent/entities
-
-4. **How do you count repetitions?**
-   - Answer: State machine tracking angle thresholds
-
-5. **What's the accuracy of pose detection?**
-   - Answer: 98%+ with MediaPipe, but varies by lighting/angle
-
-### Conceptual Questions:
-1. **Why is real-time feedback important?**
-2. **How does AI improve over traditional fitness apps?**
-3. **What are the limitations of your system?**
-4. **How would you scale this for 10,000 users?**
+| Phase | Status |
+|-------|--------|
+| Project scaffolding & UI | ✅ Done |
+| Auth (email/password) + protected routes | ✅ Done |
+| Lovable Cloud (Supabase) integration | ✅ Done |
+| MediaPipe pose detection | ✅ Done |
+| 4 exercise detectors w/ rep + form scoring | ✅ Done |
+| Voice feedback toggle | ✅ Done |
+| Workout session persistence | ✅ Done |
+| Personal analytics dashboard | ✅ Done |
+| Groq chatbot via edge function | ✅ Done |
+| Light/dark theme | ✅ Done |
 
 ---
 
-## ⚠️ Common Mistakes to Avoid
+## 🎓 Defense — Likely Questions
 
-1. **Don't claim 100% accuracy** - Be realistic about limitations
-2. **Don't skip the math** - Professors love seeing calculations
-3. **Don't ignore edge cases** - What if lighting is poor?
-4. **Don't overcomplicate** - Keep explanations clear
-5. **Don't forget to demo** - Have a working prototype ready
-
----
-
-## 🎉 Success Tips
-
-1. **Practice your demo** - Show all features working
-2. **Prepare diagrams** - Architecture, flowcharts, algorithms
-3. **Know your code** - Be ready to explain any line
-4. **Highlight innovation** - What makes your project unique
-5. **Show results** - Accuracy metrics, user testing, performance
+1. **How does MediaPipe detect 33 landmarks?** Two-stage neural net: a person detector + a pose tracker (BlazePose architecture).
+2. **How do you compute joint angles?** Vector dot-product → `acos` → degrees, on 3 landmarks.
+3. **Why a state machine for reps?** Avoids double-counting and only increments on a full down→up transition.
+4. **Why an edge function for the chatbot?** Keeps the Groq API key secret and centralizes the system prompt.
+5. **How is form score calculated?** Per-frame deviation from ideal angle range, smoothed into a 0–100 score.
+6. **How is data secured?** Supabase RLS — every query is scoped to `auth.uid()`.
+7. **Why rule-based + LLM hybrid for the chatbot?** Common questions answer instantly with no API cost; only novel queries hit the LLM.
+8. **Limitations?** Pose accuracy degrades in poor lighting, occlusion, or side angles. Calorie estimates are approximations.
 
 ---
 
-**Good luck with your final year project! 🚀**
+## 🔧 Local Notes
 
-For implementation help, check the inline code comments and ask me any questions.
+- `.env`, `src/integrations/supabase/client.ts`, and `src/integrations/supabase/types.ts` are **auto-generated** — do not edit
+- `GROQ_API_KEY` is set as a Supabase Edge Function secret
+- Dev server is managed by Lovable; manual `npm run build` is not required
+
+---
+
+**Status: Feature-complete and ready for defense. 🚀**
