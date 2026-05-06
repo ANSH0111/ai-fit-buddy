@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Play } from "lucide-react";
 import FullscreenExerciseOverlay from "@/components/FullscreenExerciseOverlay";
 import { useVoiceFeedback } from "@/hooks/useVoiceFeedback";
+import { saveWorkoutSession } from "@/lib/saveWorkoutSession";
 
 interface FeedbackItem {
   type: "good" | "warning" | "error";
@@ -348,6 +349,11 @@ const PushUpDetector = () => {
   };
 
   const stopDetection = () => {
+    void saveWorkoutSession({
+      exercise_name: "Push-ups",
+      reps: repCountRef.current,
+      form_score: formScore,
+    });
     stopCamera();
     setFeedback([]);
     setLatestFeedback(null);
