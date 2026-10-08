@@ -183,7 +183,7 @@ const ChatbotPage = () => {
                   <div>
                     <CardTitle>AI Fitness Coach</CardTitle>
                     <CardDescription>
-                      Powered by Groq · llama-3.1-8b-instant
+                      Powered by Groq · llama-3.3-70b-versatile
                     </CardDescription>
                   </div>
                 </div>

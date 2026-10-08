@@ -9,7 +9,7 @@ A complete, working AI-Based Virtual Fitness Coach using **Real-Time Posture Det
 This project combines:
 - **Computer Vision** — MediaPipe Pose for real-time 33-landmark detection in the browser
 - **Rule-based ML** — Joint-angle thresholds + state machines for form scoring and rep counting
-- **Conversational AI** — Groq `llama-3.1-8b-instant` chatbot with rule-based fallback
+- **Conversational AI** — Groq `llama-3.3-70b-versatile` chatbot with rule-based fallback
 - **Full-stack Web App** — React 18 + Vite + Tailwind + shadcn/ui frontend, Supabase (auth + Postgres + edge functions) backend
 
 The final app implements **4 exercises**: Push-ups, Squats, Biceps Curls, and Plank — with live skeleton overlay, voice feedback, rep counting, form scoring, calorie estimation, and a personal analytics dashboard.
@@ -25,7 +25,7 @@ The final app implements **4 exercises**: Push-ups, Squats, Biceps Curls, and Pl
 | Pose Detection | MediaPipe Pose (browser, ~30 FPS) |
 | Voice | Web Speech API (`SpeechSynthesis`) |
 | Auth & DB | Supabase (via Lovable Cloud) — email/password auth, Postgres with RLS |
-| AI Chatbot | Groq API (`llama-3.1-8b-instant`) proxied via Supabase Edge Function |
+| AI Chatbot | Groq API (`llama-3.3-70b-versatile`) proxied via Supabase Edge Function |
 | Theming | next-themes (light/dark mode) |
 
 ---
@@ -106,7 +106,7 @@ A running 0–100 score is updated each frame based on how close the active join
 ### 6. AI Chatbot (Hybrid)
 - **Rule-based first** (`src/lib/chatbot.ts`) — instant, no API call, covers common fitness questions
 - **Groq fallback** — calls the `groq-chat` Supabase edge function with the last 10 messages and current exercise context
-- Edge function injects a system prompt and forwards to `llama-3.1-8b-instant`
+- Edge function injects a system prompt and forwards to `llama-3.3-70b-versatile`
 - The Groq API key is stored as a Supabase secret (`GROQ_API_KEY`) — never exposed to the browser
 
 ---
@@ -171,7 +171,7 @@ Stats populate after the user clicks **Stop** during a workout, which triggers `
 Located at `supabase/functions/groq-chat/index.ts`. Responsibilities:
 1. Validates incoming `{ history, currentExercise }` payload
 2. Reads `GROQ_API_KEY` from Supabase secrets
-3. Posts to `https://api.groq.com/openai/v1/chat/completions` with model `llama-3.1-8b-instant`
+3. Posts to `https://api.groq.com/openai/v1/chat/completions` with model `llama-3.3-70b-versatile`
 4. Returns `{ reply }` or `{ error }` with proper CORS headers
 
 > **Why an edge function?** Keeps the API key server-side and avoids CORS/secret-leak issues. The same pattern is used (per project memory) to proxy any external service.

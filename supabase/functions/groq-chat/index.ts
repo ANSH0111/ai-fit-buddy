@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemWithContext },
           ...safeHistory,
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
           upstreamError?.message?.includes("does not exist or you do not have access")
         ) {
           safeMessage =
-            "Groq rejected the configured model llama-3.1-8b-instant as unavailable or inaccessible. Restore access to this model in your Groq account to use open-ended AI chat.";
+            "Groq rejected the configured model llama-3.3-70b-versatile as unavailable or inaccessible. Restore access to this model in your Groq account to use open-ended AI chat.";
         } else if (groqRes.status === 401) {
           safeMessage = "Groq rejected the server API key. Update the Groq key in Lovable Cloud secrets to use open-ended AI chat.";
         } else if (groqRes.status === 429) {
