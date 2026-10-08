@@ -103,7 +103,19 @@ export async function getGroqResponse(
   });
 
   if (error) {
-    console.error("groq-chat invoke error:", error);
+    if (error.context instanceof Response) {
+      try {
+        const responseBody = await error.context.clone().json();
+        if (typeof responseBody?.error === "string") {
+          throw new Error(responseBody.error);
+        }
+      } catch (responseError) {
+        if (responseError instanceof Error && responseError.message !== "Unexpected end of JSON input") {
+          throw responseError;
+        }
+      }
+    }
+
     throw new Error(error.message ?? "Failed to reach AI coach");
   }
 
