@@ -94,10 +94,15 @@ export interface GroqMessage {
   content: string;
 }
 
+export interface GroqResponse {
+  text: string;
+  isError: boolean;
+}
+
 export async function getGroqResponse(
   history: GroqMessage[],
   currentExercise?: string
-): Promise<string> {
+): Promise<GroqResponse> {
   const { data, error } = await supabase.functions.invoke("groq-chat", {
     body: { history: history.slice(-10), currentExercise },
   });
@@ -118,8 +123,11 @@ export async function getGroqResponse(
   }
 
   if (data?.error) {
-    throw new Error(data.error);
+    return { text: data.error, isError: true };
   }
 
-  return data?.reply ?? "I couldn't get a response. Please try again.";
+  return {
+    text: data?.reply ?? "I couldn't get a response. Please try again.",
+    isError: false,
+  };
 }

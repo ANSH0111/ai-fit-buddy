@@ -136,11 +136,12 @@ Deno.serve(async (req) => {
         // Keep the safe fallback when the upstream response isn't valid JSON.
       }
       return new Response(
-        JSON.stringify({ error: safeMessage }),
+        JSON.stringify({ error: safeMessage, upstreamStatus: groqRes.status }),
         {
-          // Preserve Groq's upstream status (for model_not_found this is a
-          // terminal request error, not a gateway failure).
-          status: groqRes.status,
+          // The edge function handled the provider response successfully;
+          // return its terminal error as data so it cannot surface as a
+          // function 4xx/5xx runtime failure in the app.
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
