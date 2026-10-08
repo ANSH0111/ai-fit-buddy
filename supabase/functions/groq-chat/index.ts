@@ -138,7 +138,9 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: safeMessage }),
         {
-          status: 502,
+          // Preserve Groq's upstream status (for model_not_found this is a
+          // terminal request error, not a gateway failure).
+          status: groqRes.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
