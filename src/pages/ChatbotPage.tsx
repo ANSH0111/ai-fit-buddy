@@ -179,7 +179,7 @@ const ChatbotPage = () => {
                   <div>
                     <CardTitle>AI Fitness Coach</CardTitle>
                     <CardDescription>
-                      Powered by Groq · llama3-8b-8192
+                      Powered by Groq · llama-3.1-8b-instant
                     </CardDescription>
                   </div>
                 </div>

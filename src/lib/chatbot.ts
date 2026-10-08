@@ -103,20 +103,18 @@ export async function getGroqResponse(
   });
 
   if (error) {
+    let responseMessage: string | null = null;
     if (error.context instanceof Response) {
+      let responseBody: { error?: unknown } | null = null;
       try {
-        const responseBody = await error.context.clone().json();
-        if (typeof responseBody?.error === "string") {
-          throw new Error(responseBody.error);
-        }
-      } catch (responseError) {
-        if (responseError instanceof Error && responseError.message !== "Unexpected end of JSON input") {
-          throw responseError;
-        }
+        responseBody = await error.context.clone().json();
+      } catch {
+        // Fall back to the function invocation's message for non-JSON errors.
       }
+      if (typeof responseBody?.error === "string") responseMessage = responseBody.error;
     }
 
-    throw new Error(error.message ?? "Failed to reach AI coach");
+    throw new Error(responseMessage ?? error.message ?? "Failed to reach AI coach");
   }
 
   if (data?.error) {

@@ -125,8 +125,12 @@ Deno.serve(async (req) => {
         ) {
           safeMessage =
             "Groq rejected the configured model llama-3.1-8b-instant as unavailable or inaccessible. Restore access to this model in your Groq account to use open-ended AI chat.";
-        } else if (typeof upstreamError?.message === "string") {
-          safeMessage = upstreamError.message.slice(0, 300);
+        } else if (groqRes.status === 401) {
+          safeMessage = "Groq rejected the server API key. Update the Groq key in Lovable Cloud secrets to use open-ended AI chat.";
+        } else if (groqRes.status === 429) {
+          safeMessage = "Groq is rate limiting requests. Please wait a little before trying again.";
+        } else if (groqRes.status >= 500) {
+          safeMessage = "Groq is temporarily unavailable. Please try again later.";
         }
       } catch {
         // Keep the safe fallback when the upstream response isn't valid JSON.
