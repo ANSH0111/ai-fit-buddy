@@ -96,9 +96,13 @@ const ChatbotPage = () => {
         const groqResponse = await getGroqResponse(history);
         setMessages((prev) => [
           ...prev.slice(0, -1),
-          { role: "assistant", content: groqResponse },
+          {
+            role: "assistant",
+            content: groqResponse.text,
+            isError: groqResponse.isError,
+          },
         ]);
-        speakResponse(groqResponse);
+        if (!groqResponse.isError) speakResponse(groqResponse.text);
       }
     } catch (error) {
       const errMsg = error instanceof Error
