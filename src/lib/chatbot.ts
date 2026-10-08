@@ -103,8 +103,18 @@ export async function getGroqResponse(
   });
 
   if (error) {
-    console.error("groq-chat invoke error:", error);
-    throw new Error(error.message ?? "Failed to reach AI coach");
+    let responseMessage: string | null = null;
+    if (error.context instanceof Response) {
+      let responseBody: { error?: unknown } | null = null;
+      try {
+        responseBody = await error.context.clone().json();
+      } catch {
+        // Fall back to the function invocation's message for non-JSON errors.
+      }
+      if (typeof responseBody?.error === "string") responseMessage = responseBody.error;
+    }
+
+    throw new Error(responseMessage ?? error.message ?? "Failed to reach AI coach");
   }
 
   if (data?.error) {

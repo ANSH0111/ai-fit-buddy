@@ -20,6 +20,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   isLoading?: boolean;
+  isError?: boolean;
 }
 
 const QUICK_QUESTIONS = [
@@ -100,11 +101,12 @@ const ChatbotPage = () => {
         speakResponse(groqResponse);
       }
     } catch (error) {
-      const errMsg =
-        "Sorry, I had trouble connecting. Check your API key in .env or try again. 🔌";
+      const errMsg = error instanceof Error
+        ? error.message
+        : "The coach couldn't complete that request. Please try again later.";
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: "assistant", content: errMsg },
+        { role: "assistant", content: errMsg, isError: true },
       ]);
     } finally {
       setIsLoading(false);
@@ -177,7 +179,7 @@ const ChatbotPage = () => {
                   <div>
                     <CardTitle>AI Fitness Coach</CardTitle>
                     <CardDescription>
-                      Powered by Groq · llama3-8b-8192
+                      Powered by Groq · llama-3.1-8b-instant
                     </CardDescription>
                   </div>
                 </div>
@@ -201,7 +203,9 @@ const ChatbotPage = () => {
                       className={`rounded-lg px-4 py-3 max-w-[80%] ${
                         message.role === "user"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          : message.isError
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-muted"
                       }`}
                     >
                       {message.isLoading ? (

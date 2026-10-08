@@ -116,8 +116,27 @@ Deno.serve(async (req) => {
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       console.error("Groq API error:", errText);
+      let safeMessage = "Groq couldn't complete this request. Please try again later.";
+      try {
+        const upstreamError = JSON.parse(errText)?.error;
+        if (
+          upstreamError?.code === "model_not_found" ||
+          upstreamError?.message?.includes("does not exist or you do not have access")
+        ) {
+          safeMessage =
+            "Groq rejected the configured model llama-3.1-8b-instant as unavailable or inaccessible. Restore access to this model in your Groq account to use open-ended AI chat.";
+        } else if (groqRes.status === 401) {
+          safeMessage = "Groq rejected the server API key. Update the Groq key in Lovable Cloud secrets to use open-ended AI chat.";
+        } else if (groqRes.status === 429) {
+          safeMessage = "Groq is rate limiting requests. Please wait a little before trying again.";
+        } else if (groqRes.status >= 500) {
+          safeMessage = "Groq is temporarily unavailable. Please try again later.";
+        }
+      } catch {
+        // Keep the safe fallback when the upstream response isn't valid JSON.
+      }
       return new Response(
-        JSON.stringify({ error: "Upstream AI request failed" }),
+        JSON.stringify({ error: safeMessage }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
